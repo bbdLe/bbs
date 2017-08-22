@@ -2,21 +2,22 @@
 from threading import Thread
 from flask import current_app, render_template
 from flask_mail import Message
-from . import mail, celery
-#from .. import app 互相import会报错，因为app会调用email
-#from celery import Celery
+from . import mail
+from .extensions import flask_celery
+from time import sleep
 
-#celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
-#celery.conf.update(app.config)
+# def send_sync_mail(msg):
+#     with app.app_context():
+#     mail.send(msg)
+#app = create_app("default")
 
-def send_sync_mail(app, msg):
-    with app.app_context():
-        mail.send(msg)
+@flask_celery.task()
+def send_async_email(msg):
+    mail.send(msg)
 
-@celery.task
-def send_async_email(app, msg):
-    with app.app_context():
-        mail.send(msg)
+# @celery.task()
+# def add(a, b):
+#     return a + b
 
 def send_mail(to, subject, template, **kwargs):
     app = current_app._get_current_object()
@@ -24,4 +25,5 @@ def send_mail(to, subject, template, **kwargs):
                   sender=app.config["BBS_MAIL_SENDER"],
                   recipients=[to])
     msg.body = render_template(template + ".txt", **kwargs)
-    send_async_email(app, msg)
+    #add.delay(1, 2)
+    send_async_email.delay(msg)

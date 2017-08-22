@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/6abbs/manage.py", line 29, in <module>
+    manager.run()
+  File "/6abbs/venv/lib/python3.5/site-packages/flask_script/__init__.py", line 412, in run
+    result = self.handle(sys.argv[0], sys.argv[1:])
+  File "/6abbs/venv/lib/python3.5/site-packages/flask_script/__init__.py", line 383, in handle
+    res = handle(*args, **config)
+  File "/6abbs/venv/lib/python3.5/site-packages/flask_script/commands.py", line 425, in __call__
+    **self.server_options)
+  File "/6abbs/venv/lib/python3.5/site-packages/flask/app.py", line 841, in run
+    run_simple(host, port, self, **options)
+  File "/6abbs/venv/lib/python3.5/site-packages/werkzeug/serving.py", line 720, in run_simple
+    s.bind((hostname, port))
+OSError: [Errno 98] Address already in use
