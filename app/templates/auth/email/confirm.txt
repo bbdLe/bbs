@@ -1,0 +1,8 @@
+亲爱的{{user.username}},
+
+欢迎加入BBS!
+为了保证你的账号信息正确，请点击以下链接确认信息
+{{ url_for("auth.confirm", token=token, _external=True) }}
+
+BBS团队
+注意：请不要回复该邮件
