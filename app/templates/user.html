@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}{{user.username}}的资料{% endblock %}
+
+{% block page_content %}
+<div class="page-header">
+    <h1>{{ user.username }}</h1>
+    {% if user.name or user.localtion %}
+    <p>
+        {% if user.name %}{{user.name}}{% endif %}
+        {% if user.localtion %} 来自 <a href="http://maps.google.com/?q={{user.localtion}}">{{user.localtion}}</a>{% endif %}
+    </p>
+    {% endif %}
+    {% if current_user.is_administrator() %}
+    <p><a href="mailto:{{ user.email }}">{{ user.email}}</a></p>
+    {% endif %}
+    {% if user.about_me %}<p>{{ user.about_me}}</p>{% endif %}
+    <p>
+        用户加入于 {{ moment(user.member_since).format("L") }}.<br />
+        最后登陆时间 {{ moment(user.member_since).format("L")}}.
+    </p>
+    <p>
+        {% if user == current_user %}
+            <a class="btn btn-default" href="{{ url_for(".edit_profile")}}">修改个人资料</a>
+        {% endif %}
+        {% if current_user.is_administrator() %}
+            <a class="btn btn-default" href="{{ url_for(".edit_profile_admin", id=user.id)}}">修改用户资料</a>
+        {% endif %}
+    </p>
+</div>
+{% endblock %}

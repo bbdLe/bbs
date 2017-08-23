@@ -99,4 +99,5 @@ ENV/
 .mypy_cache/
 
 start-bbs.sh
+start.sh
 

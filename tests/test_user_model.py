@@ -1,5 +1,5 @@
 import unittest
-from app.models import User
+from app.models import User, Permission, AnonymousUser, Role
 from app import db, create_app
 from time import sleep
 
@@ -8,6 +8,7 @@ class UserModelTestCase(unittest.TestCase):
         self.app = create_app("testing")
         self.app_context = self.app.app_context()
         self.app_context.push()
+        db.drop_all()
         db.create_all()
 
     def tearDown(self):
@@ -85,3 +86,14 @@ class UserModelTestCase(unittest.TestCase):
         reset_token = u.gererate_reset_password_token(1)
         sleep(3)
         self.assertFalse(u.check_reset_token_and_change_passwd(reset_token, "dog"))
+
+    def test_roles_and_permissions(self):
+        Role.insert_roles()
+        u = User(email="test@gmail.com", password="dog")
+        self.assertTrue(u.can(Permission.WRITE_ARTICLES))
+        self.assertFalse(u.can(Permission.MODERATE_COMMITS))
+
+    def test_anonymous_user(self):
+        u = AnonymousUser()
+        self.assertFalse(u.can(Permission.WRITE_ARTICLES))
+        self.assertFalse(u.can(Permission.COMMENT))
