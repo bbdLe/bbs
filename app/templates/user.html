@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "_macros.html" as macros %}
 
 {% block title %}{{user.username}}的资料{% endblock %}
 
@@ -30,4 +31,7 @@
     </p>
 </div>
 {% include "_posts.html" %}
+<div class="pagination">
+    {{ macros.pagination_widget(pagination, ".user", username=user.username)}}
+</div>
 {% endblock %}
