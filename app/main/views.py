@@ -2,22 +2,29 @@
 from flask import render_template, session, redirect, url_for, current_app, abort, flash
 from flask_login import login_required, current_user
 from .. import db
-from ..models import User, Role
+from ..models import User, Role, Post
 from ..email import send_mail
 from . import main
-from .forms import NameForm, EditProfileForm, EditProfileAdminForm
+from .forms import NameForm, EditProfileForm, EditProfileAdminForm, PostForm
 from ..decorators import admin_required
 
-@main.route("/")
+@main.route("/", methods=["GET", "POST"])
 def index():
-    return render_template("index.html")
+    form = PostForm()
+    if form.validate_on_submit():
+        post = Post(body = form.body.data, author = current_user._get_current_object())
+        db.session.add(post)
+        return redirect(url_for(".index"))
+    posts = Post.query.order_by(Post.timestamp.desc()).all()
+    return render_template("index.html", form=form, posts = posts)
 
 @main.route("/user/<username>")
 def user(username):
     user = User.query.filter_by(username=username).first()
+    posts = user.posts.order_by(Post.timestamp.desc()).all()
     if user is None:
         abort(404)
-    return render_template("user.html", user=user)
+    return render_template("user.html", user=user, posts=posts)
 
 @main.route("/edit-profile", methods=["GET", "POST"])
 @login_required
@@ -42,7 +49,7 @@ def edit_profile_admin(id):
     user = User.query.get_or_404(id)
     form = EditProfileAdminForm(user)
     if form.validate_on_submit():
-        user.email = form.email.data
+        user.change_email(form.email.data)
         user.username = form.username.data
         user.confirmed = form.confirmed.data
         user.role = Role.query.get(form.role.data)

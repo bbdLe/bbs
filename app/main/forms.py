@@ -15,6 +15,10 @@ class EditProfileForm(FlaskForm):
     about_me = TextAreaField("介绍")
     submit = SubmitField("提交")
 
+class PostForm(FlaskForm):
+    body = TextAreaField("你想说什么?", validators=[Required()])
+    submit = SubmitField("提交")
+
 class EditProfileAdminForm(FlaskForm):
     email = StringField("邮箱", validators=[Required(), Length(1, 64), Email()])
     username = StringField("用户名", validators=[Required(), Length(1, 64), Regexp("^[A-Za-z][A-Za-z0-9_.]*$", 0, "用户名必须是英文或者数字结合_.")])

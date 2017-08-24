@@ -1,6 +1,6 @@
 #-*- coding: utf-8 -*-
 from flask_wtf import FlaskForm as Form
-from wtforms import StringField, PasswordField, BooleanField, SubmitField
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField
 from wtforms.validators import Required, Length, Email, Regexp, EqualTo
 from wtforms import ValidationError
 from ..models import User
@@ -37,6 +37,9 @@ class RegistrationForm(Form):
                                                 Regexp('^[A-Za-z][A-Za-z0-9_.]*$', 0, "用户名只能是英文,数字，下划线，点号")])
     password = PasswordField("密码", validators=[Required(), EqualTo('password2', message="密码必须相同")])
     password2 = PasswordField("再次输入密码", validators=[Required()])
+    name = StringField("姓名", validators=[Length(0,64)])
+    localtion = StringField("地址", validators=[Length(0, 64)])
+    about_me = TextAreaField("简介")
     submit = SubmitField("注册")
 
     def validate_email(self, field):
