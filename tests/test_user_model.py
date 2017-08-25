@@ -97,3 +97,26 @@ class UserModelTestCase(unittest.TestCase):
         u = AnonymousUser()
         self.assertFalse(u.can(Permission.WRITE_ARTICLES))
         self.assertFalse(u.can(Permission.COMMENT))
+
+    def test_following(self):
+        u1 = User(email="test1@gmail.com", password="cat")
+        u2 = User(email="test2@gmail.com", password="dog")
+        db.session.add(u1)
+        db.session.add(u2)
+        db.session.commit()
+        u1.follow(u2)
+        self.assertTrue(u1.is_following(u2))
+        self.assertTrue(u2.is_followed_by(u1))
+
+    def test_unfollowing(self):
+        u1 = User(email="test1@gmail.com", password="cat")
+        u2 = User(email="test2@gmail.com", password="dog")
+        db.session.add(u1)
+        db.session.add(u2)
+        db.session.commit()
+        u1.follow(u2)
+        self.assertTrue(u1.is_following(u2))
+        self.assertTrue(u2.is_followed_by(u1))
+        u1.unfollow(u2)
+        self.assertFalse(u1.is_following(u2))
+        self.assertFalse(u2.is_followed_by(u1))
