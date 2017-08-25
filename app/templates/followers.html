@@ -14,6 +14,7 @@
             <th>Since</th>
         </tr>
         {% for follow in followers %}
+        {% if follow.user != user %}
         <tr>
             <td>
                 <a href="{{ url_for(".user", username = follow.user.username )}}">
@@ -23,6 +24,7 @@
             </td>
             <td>{{ moment(follow.timestamp).format("L") }}</td>
         </tr>
+        {% endif %}
         {% endfor %}
     </thead>
 </table>
