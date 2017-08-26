@@ -75,6 +75,7 @@ class User(UserMixin, db.Model):
     last_seen = db.Column(db.DateTime(), default = datetime.utcnow)
     avatar_hash = db.Column(db.String(32))
     posts = db.relationship("Post", backref="author", lazy="dynamic")
+    comments = db.relationship("Comment", backref="author", lazy="dynamic")
     followed = db.relationship("Follow",
                                foreign_keys = [Follow.follower_id],
                                backref=db.backref("follower", lazy="joined"),
@@ -233,6 +234,7 @@ class Post(db.Model):
     body_html = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     author_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    comments = db.relationship("Comment", backref="post", lazy="dynamic")
 
     @staticmethod
     def generate_fake(count=100):
@@ -260,3 +262,20 @@ class Post(db.Model):
         target.body_html = bleach.linkify(bleach.clean(markdown(value, output_format="html"), tags=allowed_tags, strip=True))
 
 db.event.listen(Post.body, "set", Post.on_change_body)
+
+class Comment(db.Model):
+    __tablename__ = "comments"
+    id = db.Column(db.Integer, primary_key=True)
+    body = db.Column(db.Text)
+    body_html = db.Column(db.Text)
+    disable = db.Column(db.Boolean)
+    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    post_id = db.Column(db.Integer, db.ForeignKey("posts.id"))
+    author_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+
+    @staticmethod
+    def on_change_body(target, value, oldvalue, initiator):
+        allowed_tags = ["a", "abbr", "acronym", "b", "code", "em", "i"]
+        target.body_html = bleach.linkify(bleach.clean(markdown(value, output_format="html"), tags=allowed_tags, strip=True))
+
+db.event.listen(Comment.body, "set", Comment.on_change_body)
