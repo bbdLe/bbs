@@ -1,7 +1,8 @@
 #-*- coding: utf-8 -*-
 from . import db
 from . import login_manager
-from flask import current_app, request
+from .exceptions import ValidationError
+from flask import current_app, request, url_for, g
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from flask_login import UserMixin, AnonymousUserMixin
@@ -96,7 +97,8 @@ class User(UserMixin, db.Model):
                 self.role = Role.query.filter_by(default=True).first()
         if self.email is not None and self.avatar_hash is None:
             self.avatar_hash = hashlib.md5(self.email.encode("utf-8")).hexdigest()
-        self.follow(self)
+        self.followed.append(Follow(followed=self))
+        #self.follow(self)
 
     @property
     def password(self):
@@ -116,6 +118,10 @@ class User(UserMixin, db.Model):
     def gererate_reset_password_token(self, expiration=3600):
         s = Serializer(current_app.config["SECRET_KEY"], expiration)
         return s.dumps({"reset":self.id})
+
+    def generate_auth_token(self, expiration=3600):
+        s = Serializer(current_app.config["SECRET_KEY"], expiration)
+        return s.dumps({"id": self.id}).decode('ascii')
 
     def check_reset_token_and_change_passwd(self, token, new_password):
         s = Serializer(current_app.config["SECRET_KEY"])
@@ -180,6 +186,27 @@ class User(UserMixin, db.Model):
         f = self.followed.filter_by(followed_id=user.id).first()
         if f:
             db.session.delete(f)
+
+    def to_json(self):
+        json_user = {
+            "url" : url_for("api.get_user", id = self.id, _external=True),
+            "username" : self.username,
+            "member_since" : self.member_since,
+            "last_seen" : self.last_seen,
+            "posts" : url_for("api.get_user_posts", id=self.id, _external=True),
+            "followed_posts" : url_for("api.get_user_followed_posts", id=self.id, _external=True),
+            "post_count" : self.posts.count()
+        }
+        return json_user
+
+    @staticmethod
+    def verify_auth_token(token):
+        s = Serializer(current_app.config["SECRET_KEY"])
+        try:
+            data = s.loads(token)
+        except:
+            return None
+        return User.query.get(data["id"])
 
     @staticmethod
     def add_self_follower():
@@ -255,6 +282,27 @@ class Post(db.Model):
         except IntegrityError:
             db.session.rollback()
 
+    def to_json(self):
+        json_post = {
+            "url": url_for("api.get_post", id=self.id, _external=True),
+            "body": self.body,
+            "body_html": self.body_html,
+            "timestamp": self.timestamp,
+            "author": url_for("api.get_user", id=self.author_id, _external=True),
+            "comments": url_for("api.get_comments", id=self.id, _external=True),
+            "comments_count": self.comments.count()
+        }
+
+        return json_post
+
+    @staticmethod
+    def from_json(json_post):
+        print(json_post)
+        body = json_post.get("body")
+        if body is None or body == "":
+            raise ValidationError("post does not have a body")
+        return Post(body=body)
+
     @staticmethod
     def on_change_body(target, value, oldvalue, initiator):
         allowed_tags = ["a", "abbr", "acronym", "br", "blockquoto", "code", "em", "i", "li",
@@ -272,6 +320,16 @@ class Comment(db.Model):
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     post_id = db.Column(db.Integer, db.ForeignKey("posts.id"))
     author_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+
+    def to_json(self):
+        json_comment = {
+            "body": self.body,
+            "body_html": self.body_html,
+            "timestamp": self.timestamp,
+            "author": url_for("api.get_user", id=self.author_id, _external=True),
+        }
+
+        return json_comment
 
     @staticmethod
     def on_change_body(target, value, oldvalue, initiator):

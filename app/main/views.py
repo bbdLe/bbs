@@ -1,6 +1,7 @@
 #-*- coding: utf-8 -*-
 from flask import render_template, session, redirect, url_for, current_app, abort, flash, request, make_response
 from flask_login import login_required, current_user
+from flask_sqlalchemy import get_debug_queries
 from .. import db
 from ..models import User, Role, Post, Permission, Comment
 from ..email import send_mail
@@ -204,3 +205,22 @@ def moderate_disable(id):
     comment.disable = True
     db.session.add(comment)
     return redirect(url_for(".moderate", page=page))
+
+
+@main.route("/shutdown")
+def server_shutdown():
+    if not current_app.testing:
+        abort(404)
+    shutdown = request.environ.get("werkzeug.server.shutdown")
+    if not shutdown:
+        abort(500)
+    shutdown()
+    return "Shutting down..."
+
+@main.after_app_request
+def after_request(response):
+    for query in get_debug_queries():
+        if query.duration >= 0.001:
+            current_app.logger.warning("Slow query: %s\nParameters: %s\nDuration: %fs\nContext: %s\n" % (query.statement, query.parameters, query.duration,
+            query.context))
+    return response
